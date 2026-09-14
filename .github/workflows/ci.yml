@@ -25,6 +25,7 @@ jobs:
       - name: Run Pint
         run: ./vendor/bin/pint --test
 
+
   analyse:
     runs-on: ubuntu-latest
 
@@ -42,6 +43,7 @@ jobs:
 
       - name: Composer audit
         run: composer audit
+
 
   tests:
     runs-on: ubuntu-latest
@@ -65,3 +67,29 @@ jobs:
 
       - name: Run tests
         run: php artisan test
+
+
+  deploy:
+    needs: [lint, analyse, tests]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Install Laravel Cloud CLI
+        run: composer global require laravel/cloud-cli
+
+      - name: Deploy to Laravel Cloud
+        env:
+          LARAVEL_CLOUD_TOKEN: ${{ secrets.LARAVEL_CLOUD_TOKEN }}
+        run: cloud deploy
+
+      - name: Smoke test
+        run: curl --fail https://exam1-production-yaubzo.laravel.cloud/health
